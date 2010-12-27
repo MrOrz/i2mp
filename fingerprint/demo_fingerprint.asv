@@ -64,8 +64,9 @@
 
 % Get the list of reference tracks to add (URLs in this case, but
 % filenames work too)
-tks= myls([]);
-
+% tks= myls(['http://labrosa.ee.columbia.edu/~dpwe/tmp/Nine_Lives/*.mp3']);
+% edited by MrOrz\
+tks = ['mp3/.mp3',]
 % Initialize the hash table database array 
 clear_hashtable
 % Calculate the landmark hashes for each reference track and store
