@@ -27,8 +27,8 @@ function H = constellations( D, fs , DRAW)
   %         window width (time bins)
   %
 
-  WINDOW_HEIGHT = 10; % unit: frequency bins
-  WINDOW_WIDTH = 10;  % unit: time bins
+  WINDOW_HEIGHT = 6; % unit: frequency bins
+  WINDOW_WIDTH = 2;  % unit: time bins
   WINDOW_OFFSET = 1;  % unit: time bins
   
   %% spectrum analysis %%
@@ -40,7 +40,7 @@ function H = constellations( D, fs , DRAW)
   % P: (freq bin size)x(time bin size) matrix. Its value is power.
   
   fprintf('%d time bins, %d frequency bins.\n', length(T), length(F));
-  time_res = T(2)-T(1)
+  time_res = T(2)-T(1);
   fprintf('Time resolution = %f sec\n', time_res);
   fprintf('Frequency resolution = %f Hz\n', F(2)-F(1));
   
@@ -62,16 +62,17 @@ function H = constellations( D, fs , DRAW)
   for i = 1:length(T) % for each time bin
     %find local maximals that is 3dB higher than surroundings.
     [pks, loc] = findpeaks(P(:, i),'THRESHOLD' , 3, 'SORTSTR', 'descend');
-    
+      
     % only keeps largest PEAK_NUM peaks
     nPeaks = length(pks);
     if nPeaks > PEAK_NUM
       pks = pks(1:PEAK_NUM); loc = loc(1:PEAK_NUM);
       nPeaks = PEAK_NUM;
     end
-    peaks(i,1:nPeaks, 1) = pks;
-    peaks(i,1:nPeaks, 2) = loc;
-      
+    if nPeaks > 0
+      peaks(i,1:nPeaks, 1) = pks;
+      peaks(i,1:nPeaks, 2) = loc;
+    end
     % plot peaks
     if DRAW;  stem3(ones(1,length(pks)) .* T(i), F(loc), pks); end;
     
@@ -120,7 +121,7 @@ function H = constellations( D, fs , DRAW)
   end
   fprintf('\n');
   
-  % trim invalid H (f2 should > 0, since freq bins are 1~# of freq bins)
+  % trim invalid H (f2 should > 0, since freq bin id should be 1~#)
   H = H(H(:,2)>0, : );
   
   % change the unit of f1,f2, dt, t1 to Hz and Seconds

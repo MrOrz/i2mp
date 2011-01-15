@@ -40,7 +40,7 @@ function H = constellations( D, fs , DRAW)
   % P: (freq bin size)x(time bin size) matrix. Its value is power.
   
   fprintf('%d time bins, %d frequency bins.\n', length(T), length(F));
-  time_res = T(2)-T(1)
+  time_res = T(2)-T(1);
   fprintf('Time resolution = %f sec\n', time_res);
   fprintf('Frequency resolution = %f Hz\n', F(2)-F(1));
   
@@ -62,7 +62,7 @@ function H = constellations( D, fs , DRAW)
   for i = 1:length(T) % for each time bin
     %find local maximals that is 3dB higher than surroundings.
     [pks, loc] = findpeaks(P(:, i),'THRESHOLD' , 3, 'SORTSTR', 'descend');
-    
+      
     % only keeps largest PEAK_NUM peaks
     nPeaks = length(pks);
     if nPeaks > PEAK_NUM
@@ -79,9 +79,7 @@ function H = constellations( D, fs , DRAW)
     if mod(i, 100) == 0; fprintf('.'); end;
   end
   fprintf('\n');
-  
-  if DRAW; hold off; end;
-  
+
   %disp(peaks);
   
   %% packing local maxes into H %%
@@ -107,14 +105,14 @@ function H = constellations( D, fs , DRAW)
       
       f2_index = target_peaks > f_min & target_peaks < f_max; % logical arr
       f2 = target_peaks(f2_index);
-      dt = ceil(find(f2_index)./PEAK_NUM);  % col num of logical arr = dt arr
+      dt = mod(find(f2_index)-1, size(target_peaks,1)) + WINDOW_OFFSET;  % row num of logical arr = dt arr
       n = length(f2); % size of f2 = size of dt
       
       H(Hptr:Hptr+n-1, :) = [ones(n,1).*f1,f2,dt,ones(n,1).*t];
       Hptr = Hptr + n;
     end
     
-    if mod(t, 10) == 0; fprintf('.'); end;
+    if mod(t, 100) == 0; fprintf('.'); end;
     if(Hptr >= size(H, 1) * 0.9) % if H is almost full
       %fprintf('e');
       H = [H; zeros(prealloc_size, 4)]; % add more space to H
@@ -122,7 +120,7 @@ function H = constellations( D, fs , DRAW)
   end
   fprintf('\n');
   
-  % trim invalid H (f2 should > 0, since freq bins are 1~# of freq bins)
+  % trim invalid H (f2 should > 0, since freq bin id should be 1~#)
   H = H(H(:,2)>0, : );
   
   % change the unit of f1,f2, dt, t1 to Hz and Seconds
@@ -131,8 +129,9 @@ function H = constellations( D, fs , DRAW)
   
   % plot peak pairs
   if DRAW 
-    
-    plot3([], [], [0,0]);
+    f1 = H(:,1); f2 = H(:,2); dt = H(:,3); t1 = H(:,4);
+    plot3([t1'; (t1+dt)'], [f1'; f2'], zeros(2,length(t1)), '.-r');
+    hold off;
   end
   
 end

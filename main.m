@@ -1,10 +1,11 @@
 function main()
   %% should be calling ffmpeg to downsample here...
-  wav = wavread('testcases/STE-000.wav');
+  wav = wavread('testcases/MVI_1304_ref.wav');
   
   TARGET_SAMPLE_RATE = 5000;
   
   wav = resample(wav(1:100000, 1), TARGET_SAMPLE_RATE, 44100 );
+  %wav = resample(wav(:, 1), TARGET_SAMPLE_RATE, 44100 );
   
   %% generating landmarks
   % lm[i,:] = ith landmark [f1, f2, dt, t1]. 
