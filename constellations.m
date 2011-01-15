@@ -1,8 +1,14 @@
-function H = constellations( D, fs , DRAW)
+function [H, F, T, DT] = constellations( D, fs , DRAW)
   % returns an 2-D array with its rows as [f1, f2, dt, t1].
-  %   D:  1-D waveform data
-  %   fs: sampling rate for D
-  %   DRAW: =1: draw spectrum. might be slow!
+  %   input:
+  %     D:  1-D waveform data
+  %     fs: sampling rate for D
+  %     DRAW: =1: draw spectrum. might be slow!
+  %   output:
+  %     H:  many rows of [f1, f2, dt, t1].
+  %     F:  frequency coordinate in Hz. f1(i) corresponds to F(f1(i)) Hz.
+  %     T:  time coordinate in seconds. t1(i) corresponds to T(t1(i)) Hz.
+  %     DT: time unit for dt.  time difference in second = dt * DT.
   
   if nargin == 2; DRAW = 0; end;
   
@@ -30,6 +36,9 @@ function H = constellations( D, fs , DRAW)
   WINDOW_HEIGHT = 6; % unit: frequency bins
   WINDOW_WIDTH = 2;  % unit: time bins
   WINDOW_OFFSET = 1;  % unit: time bins
+  
+  % suppress findpeaks warnings
+  warning('off', 'signal:findpeaks');
   
   %% spectrum analysis %%
   
@@ -125,12 +134,15 @@ function H = constellations( D, fs , DRAW)
   H = H(H(:,2)>0, : );
   
   % change the unit of f1,f2, dt, t1 to Hz and Seconds
-  H = [F(H(:,1)), F(H(:,2)), H(:,3) * time_res , T(H(:,4))'];
-
+  %H = [F(H(:,1)), F(H(:,2)), H(:,3) * time_res , T(H(:,4))'];
+  
+  % return DT
+  DT = time_res;
   
   % plot peak pairs
   if DRAW 
-    f1 = H(:,1); f2 = H(:,2); dt = H(:,3); t1 = H(:,4);
+    f1 = F(H(:,1)); f2 = F(H(:,2));
+    dt = H(:,3) * time_res; t1 = T(H(:,4))';
     plot3([t1'; (t1+dt)'], [f1'; f2'], zeros(2,length(t1)), '.-r');
     hold off;
   end
