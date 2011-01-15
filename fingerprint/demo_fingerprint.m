@@ -72,7 +72,7 @@ clear_hashtable
 % it in the array (takes a few seconds per track).
 add_tracks(tks);
 % Load a query waveform (recorded from playback on a laptop)
-[dt,srt] = mp3read('Q-full-circle2.mp3');
+[dt,srt] = mp3read('MVI_1304.mp3');
 % Run the query
 R = match_query(dt,srt);
 % R returns all the matches, sorted by match quality.  Each row
@@ -89,7 +89,7 @@ R(:,:)
 %
 % Plot the matches
 illustrate_match(dt,srt,tks);
-colormap(1-gray);
+%colormap(1-gray);
 % This re-runs the match, then plots spectrograms of both query and
 % the matching part of the reference, with the landmark pairs
 % plotted on top in red, and the matching landmarks plotted in

@@ -1,19 +1,15 @@
-function H = landmark2hash(L)
-% input : [ f1 f2 dt t] 
-% output : 
-%  Convert a set of 4-entry landmarks <t1 f1 f2 dt> 
-%  into a set of <songid time hash> triples ready to store.
-%  S is a scalar songid, or one per landmark (defaults to 0)
+function hash = landmark2hash(lm)
+  % Input : [f1,f2,dt,t]
+  % Output : [t,key]
+  % 20 bits Hash value  : 8 bits of f1, 6 bits of df, 6 bits of dt
 
-% Hash value is 20 bits: 8 bits of F1, 6 bits of delta-F, 6 bits of delta-T
-
-H = uint32(L(:,4));
-% Make sure F1 is 0..255, not 1..256
-F1 = rem(round(L(:,1)-1),2^8);
-DF = round(L(:,2)-L(:,2));
-if DF < 0
-  DF = DF + 2^8;
-end
-DF = rem(DF,2^6);
-DT = rem(abs(round(L(:,3))), 2^6);
-H = [H,uint32(F1*(2^12)+DF*(2^6)+DT)];
+  t = uint32(lm(:,4));
+  f1 = rem(round(lm(:,1)-1),2^8);
+  df = round(lm(:,2)-lm(:,1));
+  if df < 0
+    df = df + 2^8;
+  end
+  df = rem(df,2^6);
+  dt = rem(abs(round(lm(:,3))), 2^6);
+  key = uint32(f1*(2^12) + df*(2^6)+dt);
+  hash = [t,key];

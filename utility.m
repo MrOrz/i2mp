@@ -1,4 +1,4 @@
-function [DM,SRO,TK,T] = illustrate_match(DQ,SR,FL,IX)
+function [DM,SRO,TK,T] = utility(DQ,SR,FL,IX)
 % [DM,SRO,TK,T] = illustrate_match(DQ,SR,FL,IX)
 %     Show graphically which landmarks led to a match.
 %     DQ @ SR is the waveform of the query.
@@ -25,7 +25,7 @@ subplot(211)
 show_landmarks(DQ,SR,Lq);
 
 % Recalculate landmarks for the match piece
-tbase = 0.032;  % time base of analysis
+tbase = 1/256;  % time base of analysis
 %matchtrk = R(IX,1);
 matchdt = R(IX,2);
 matchtrk =1;

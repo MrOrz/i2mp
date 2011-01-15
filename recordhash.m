@@ -1,55 +1,17 @@
-function N = recordhash(H)
-% N = record_hashes(H)
-%   Record the set of hashes that are rows of H in persistent
-%   database.
-%   Format of H rows are 3 columns:
-%   <song id> <start time index> <hash>
-% song ID is 24 bit
-% time index is 8 bit
-%   (1s basic resolution out to 256s)
-% Hash is 20 bit = 1M slots
-% N returns the actual number of hashes saved (excluding table overflows).
-%
-% 2008-12-24 Dan Ellis dpwe@ee.columbia.edu
-
-% This version uses an in-memory global with one row per hash
-% value, and a series of song ID / time ID entries per hash
-
-global HashTable HashTableCounts
-
-%if exist('HashTable','var') == 0 || length(HashTable) == 0
-%   clear_hashtable;
-%end
-
-maxnentries = size(HashTable,1);
-
-nhash = size(H,1);
-
-N = 0;
-
-TIMESIZE = 16384;
-
-for i=1:nhash
- % song = H(i,1);
-  toffs = mod(round(H(i,1)), TIMESIZE);
-  hash = 1+H(i,2);  % avoid problems with hash == 0
-  htcol = HashTable(:,hash);
-  nentries =  HashTableCounts(hash) + 1;
-  if nentries <= maxnentries
-	% put entry in next available slot
-	r = nentries;
-  else
-    % choose a slot at random; will only be stored if it falls into
-    % the first maxnentries slots (whereupon it will replace an older 
-    % value).  This approach guarantees that all values we try to store
-    % under this hash will have an equal chance of being retained.
-    r = ceil(nentries*rand(1));
+function recordhash(hash)
+  global HashTable HashTableCounts   
+  for i=1:size(hash,1)
+    key2 = 1 + hash(i,2);  % Avoid problems with key == 0    
+    numberOfEntry =  HashTableCounts(key2) + 1;
+    if numberOfEntry <= size(HashTable,1)	  
+	  r = numberOfEntry; % put entry in next available slot
+    else      
+      r = ceil(numberOfEntry * rand(1)); % If full, choose a random size
+    end
+    % Put it in the hash table
+    if r <= size(HashTable,1)   
+      hashValue = int32(round(hash(i,1)));      
+      HashTable(r,key2) = hashValue;      
+    end
+    HashTableCounts(key2) = numberOfEntry; % Update the HashTableCounts value
   end
-  if r <= maxnentries
-    hashval = int32(TIMESIZE + toffs);
-%    disp(num2str(floor(double(hashval)/TIMESIZE)));
-    HashTable(r,hash) = hashval;
-    N = N+1;
-  end
-HashTableCounts(hash) = nentries;
-end
