@@ -105,7 +105,7 @@ function H = constellations( D, fs , DRAW)
       
       f2_index = target_peaks > f_min & target_peaks < f_max; % logical arr
       f2 = target_peaks(f2_index);
-      dt = ceil(find(f2_index)./PEAK_NUM) + WINDOW_OFFSET;  % col num of logical arr = dt arr
+      dt = mod(find(f2_index)-1, size(target_peaks,1)) + WINDOW_OFFSET;  % row num of logical arr = dt arr
       n = length(f2); % size of f2 = size of dt
       
       H(Hptr:Hptr+n-1, :) = [ones(n,1).*f1,f2,dt,ones(n,1).*t];
