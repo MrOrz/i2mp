@@ -14,15 +14,20 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   
   %% CONFIGURABLE PARAMETERS %%
   
-  % configurable short-time Fourier transform parameters
+  % -- configurable short-time Fourier transform parameters 
   STFT_WINDOW  = 256;  % STFT time window. don't know what it is :P
   STFT_OVERLAP = 220;  % # of STFT samples overlapped with last STFT.
   STFT_NSAMPLE = 256;  % # of STFT samples
   
-  % peak-marking parameters
-  PEAK_NUM = 5; % find largest PEAKNUM peaks each time bin.
+  % -- peak-marking parameters
+  % find largest PEAKNUM peaks each time bin.
+  PEAK_NUM = 5; 
+  % peaks should be at least MIN_PEAK_DIST
+  % frequency bins away from each other
+  MIN_PEAK_DIST = 5; 
 
-  % constellation parameters
+  
+  % -- constellation parameters
   %
   % window   ___________________
   % offset   |        x         |
@@ -34,7 +39,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   %
 
   WINDOW_HEIGHT = 6; % unit: frequency bins
-  WINDOW_WIDTH = 2;  % unit: time bins
+  WINDOW_WIDTH = 0;  % unit: time bins
   WINDOW_OFFSET = 1;  % unit: time bins
   
   % suppress findpeaks warnings
@@ -69,8 +74,13 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   peaks(:,:,2) = zeros(length(T), PEAK_NUM);
   fprintf('Processing');
   for i = 1:length(T) % for each time bin
+    %meanpeak = mean(P(:,i));
     %find local maximals that is 3dB higher than surroundings.
-    [pks, loc] = findpeaks(P(:, i),'THRESHOLD' , 3, 'SORTSTR', 'descend');
+    %[pks, loc] = findpeaks(P(:, i),'THRESHOLD' , 3, 'SORTSTR', 'descend');
+    
+    % find local maximals that is MIN_PEAK_DIST away from other smaller
+    % peaks.
+    [pks, loc] = findpeaks(P(:, i), 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
       
     % only keeps largest PEAK_NUM peaks
     nPeaks = length(pks);
