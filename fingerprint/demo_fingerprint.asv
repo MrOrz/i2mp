@@ -64,9 +64,8 @@
 
 % Get the list of reference tracks to add (URLs in this case, but
 % filenames work too)
-% tks= myls(['http://labrosa.ee.columbia.edu/~dpwe/tmp/Nine_Lives/*.mp3']);
-% edited by MrOrz\
-tks = ['mp3/.mp3',]
+tks= myls([]);
+
 % Initialize the hash table database array 
 clear_hashtable
 % Calculate the landmark hashes for each reference track and store
@@ -81,7 +80,7 @@ R = match_query(dt,srt);
 % the database that matches, the number of matching hash landmarks,
 % and the time offset (in 32ms steps) between the beggining of the
 % reference track and the beggining of the query audio.
-R(1,:)
+R(:,:)
 % 5 18 1 18 means tks{5} was matched with 18 matching landmarks, at a
 % time skew of 1 frame (query starts ~ 0.032s after beginning of
 % reference track), and a total of 18 hashes matched that track at 
@@ -90,7 +89,7 @@ R(1,:)
 %
 % Plot the matches
 illustrate_match(dt,srt,tks);
-colormap(1-gray)
+colormap(1-gray);
 % This re-runs the match, then plots spectrograms of both query and
 % the matching part of the reference, with the landmark pairs
 % plotted on top in red, and the matching landmarks plotted in

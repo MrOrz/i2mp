@@ -25,59 +25,47 @@ end
 
 %Rt = get_hash_hits(landmark2hash(find_landmarks(D,SR)));
 Lq = find_landmarks(D,SR, dens);
+
 %%Lq = fuzzify_landmarks(Lq);
 % Augment with landmarks calculated half-a-window advanced too
 landmarks_hopt = 0.032;
-Lq = [Lq;find_landmarks(D(round(landmarks_hopt/4*SR):end),SR, dens)];
-Lq = [Lq;find_landmarks(D(round(landmarks_hopt/2*SR):end),SR, dens)];
-Lq = [Lq;find_landmarks(D(round(3*landmarks_hopt/4*SR):end),SR, dens)];
+offset = 32;
+SR
+for i = 1:offset-1
+  Lq = [Lq;find_landmarks(D(round(landmarks_hopt*i/offset*SR):end),SR, dens)];
+end
 % add in quarter-hop offsets too for even better recall
 
 Hq = unique(landmark2hash(Lq), 'rows');
+
 disp(['landmarks ',num2str(size(Lq,1)),' -> ', num2str(size(Hq,1)),' hashes']);
 Rt = get_hash_hits(Hq);
+
 nr = size(Rt,1);
 
 if nr > 0
-
-  % Find all the unique tracks referenced
-  [utrks,xx] = unique(sort(Rt(:,1)),'first');
-  utrkcounts = diff([xx',nr]);
-
-  [utcvv,utcxx] = sort(utrkcounts, 'descend');
-  % Keep at most 20 per hit
-  utcxx = utcxx(1:min(20,length(utcxx)));
-  utrkcounts = utrkcounts(utcxx);
-  utrks = utrks(utcxx);
+  R = zeros(3);   
+  % Find the most popular time offset
+  [dts,xx] = unique(sort(Rt(:,1)),'first');
+  dtcounts = 1+diff([xx',size(Rt,1)]);
+  [vv,xx] = max(dtcounts);
+  %    [vv,xx] = sort(dtcounts, 'descend');
+  R = [vv(1),dts(xx(1)),size(Rt,1)];
+  R = [sum(abs(Rt(:,1)-dts(xx(1)))<=1),dts(xx(1)),size(Rt,1)];
   
-  nutrks = length(utrks);
-  R = zeros(nutrks,4);
-
-  for i = 1:nutrks
-    tkR = Rt(Rt(:,1)==utrks(i),:);
-    % Find the most popular time offset
-    [dts,xx] = unique(sort(tkR(:,2)),'first');
-    dtcounts = 1+diff([xx',size(tkR,1)]);
-    [vv,xx] = max(dtcounts);
-%    [vv,xx] = sort(dtcounts, 'descend');
-    R(i,:) = [utrks(i),vv(1),dts(xx(1)),size(tkR,1)];
-    R(i,:) = [utrks(i),sum(abs(tkR(:,2)-dts(xx(1)))<=1),dts(xx(1)),size(tkR,1)];
-  end
-
   % Sort by descending match count
-  [vv,xx] = sort(R(:,2),'descend');
+  [vv,xx] = sort(R(:,1),'descend');
   R = R(xx,:);
 
   % Extract the actual landmarks
-  H = Rt((Rt(:,1)==R(IX,1)) & (Rt(:,2)==R(IX,3)),:);
+  H = Rt( (Rt(:,1)==R(IX,2)),:);
   % Restore the original times
   for i = 1:size(H,1)
-    hix = find(Hq(:,3)==H(i,3));
+    hix = find(Hq(:,3)==H(i,2));
     hix = hix(1);  % if more than one...
-    H(i,2) = H(i,2)+Hq(hix,2);
+    H(i,1) = H(i,1)+Hq(hix,2);
     L(i,:) = hash2landmark(H(i,:));
   end
-
 
   % Return no more than 100 hits, and only down to 10% the #hits in
   % most popular
@@ -85,8 +73,8 @@ if nr > 0
   if size(R,1) > maxrtns
     R = R(1:maxrtns,:);
   end
-  maxhits = R(1,2);
-  nuffhits = R(:,2)>(0.1*maxhits);
+  maxhits = R(1,1);
+  nuffhits = R(:,1)>(0.1*maxhits);
   %R = R(nuffhits,:);
 
 else

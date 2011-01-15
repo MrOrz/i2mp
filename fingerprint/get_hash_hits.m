@@ -24,24 +24,22 @@ nhtcols = size(HashTable,1);
 
 TIMESIZE=16384;
 
-Rsize = 1000;  % preallocate
-R = zeros(Rsize,3);
+Rsize = 100;  % preallocate
+R = zeros(Rsize,2);
 Rmax = 0;
 
 for i = 1:length(H)
   hash = H(i,2);
   htime = double(H(i,1));
   nentries = min(nhtcols,HashTableCounts(hash+1));
-  htcol = double(HashTable(1:nentries,hash+1));
-  songs = floor(htcol/TIMESIZE);
-  times = round(htcol-songs*TIMESIZE);
-  if Rmax+nentries > Rsize
-    R = [R;zeros(Rsize,3)];
+  htcol = double(HashTable(1:nentries,hash+1));  
+  times = round(htcol-TIMESIZE);
+  while (Rmax+nentries > Rsize)
+    R = [R;zeros(Rsize,2)];
     Rsize = size(R,1);
   end
-  dtimes = times-htime;
-  R(Rmax+[1:nentries],:) = [songs, dtimes, repmat(double(hash),nentries,1)];
+    dtimes = times-htime;
+  R(Rmax+[1:nentries],:) = [ dtimes, repmat(double(hash),nentries,1)];
   Rmax = Rmax + nentries;
 end
-
 R = R(1:Rmax,:);
