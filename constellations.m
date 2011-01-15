@@ -38,7 +38,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   WINDOW_OFFSET = 1;  % unit: time bins
   
   % suppress findpeaks warnings
-  warning('off', 'signal:findpeaks');
+  warning('off', 'signal:findpeaks:noPeaks');
   
   %% spectrum analysis %%
   
