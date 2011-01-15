@@ -1,9 +1,9 @@
 function H = landmark2hash(L,S)
-% H = landmark2hash(L,S)
+% input : [t f1 f2 dt] = [起始時間 頻率一 頻率二 間隔時間]
+% output : 
 %  Convert a set of 4-entry landmarks <t1 f1 f2 dt> 
 %  into a set of <songid time hash> triples ready to store.
 %  S is a scalar songid, or one per landmark (defaults to 0)
-% 2008-12-29 Dan Ellis dpwe@ee.columbia.edu
 
 % Hash value is 20 bits: 8 bits of F1, 6 bits of delta-F, 6 bits of delta-T
 

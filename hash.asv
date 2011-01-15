@@ -1,0 +1,92 @@
+function L = hash2landmark(H)
+% L = hash2landmark(H)
+%  Convert a set of <time hash> pairs ready from store 
+%  into a set of 4-entry landmarks <t1 f1 f2 dt>.
+%  If H is 3 cols, first col (song ID) is discarded.
+% 2008-12-29 Dan Ellis dpwe@ee.columbia.edu
+
+% Hash value is 20 bits: 8 bits of F1, 6 bits of F2-F1, 6 bits of delta-T
+
+%H = uint32(L(:,1));
+%F1 = rem(round(L(:,2)),2^7);
+%F2 = rem(round(L(:,4)),2^7);
+%DT = rem(abs(round(L(:,3) - L(:,1))), 2^6);
+%H = [H,uint32(F1*(2^13)+F2*(2^6)+DT)];
+
+if size(H,2) == 3
+  H = H(:,[2 3]);
+end
+
+H1 = H(:,1);
+H2 = double(H(:,2));
+F1 = floor(H2/(2^12));
+H2 = H2 - (2^12)*F1;
+F1 = F1 + 1;
+DF = floor(H2/(2^6));
+H2 = H2 - (2^6)*DF;
+if DF > 2^5
+  DF = DF-2^6;
+end
+F2 = F1+DF;
+
+DT = H2;
+
+L = [F1,F2,DT,H1];
+
+
+
+function N = record_hashes(H)
+% N = record_hashes(H)
+%   Record the set of hashes that are rows of H in persistent
+%   database.
+%   Format of H rows are 3 columns:
+%   <song id> <start time index> <hash>
+% song ID is 24 bit
+% time index is 8 bit
+%   (1s basic resolution out to 256s)
+% Hash is 20 bit = 1M slots
+% N returns the actual number of hashes saved (excluding table overflows).
+%
+% 2008-12-24 Dan Ellis dpwe@ee.columbia.edu
+
+% This version uses an in-memory global with one row per hash
+% value, and a series of song ID / time ID entries per hash
+
+global HashTable HashTableCounts
+
+%if exist('HashTable','var') == 0 || length(HashTable) == 0
+%   clear_hashtable;
+%end
+
+maxnentries = size(HashTable,1);
+
+nhash = size(H,1);
+
+N = 0;
+
+TIMESIZE = 16384;
+
+for i=1:nhash
+ % song = H(i,1);
+  toffs = mod(round(H(i,1)), TIMESIZE);
+  hash = 1+H(i,2);  % avoid problems with hash == 0
+  htcol = HashTable(:,hash);
+  nentries =  HashTableCounts(hash) + 1;
+  if nentries <= maxnentries
+	% put entry in next available slot
+	r = nentries;
+  else
+    % choose a slot at random; will only be stored if it falls into
+    % the first maxnentries slots (whereupon it will replace an older 
+    % value).  This approach guarantees that all values we try to store
+    % under this hash will have an equal chance of being retained.
+    r = ceil(nentries*rand(1));
+  end
+  if r <= maxnentries
+    hashval = int32(TIMESIZE + toffs);
+%    disp(num2str(floor(double(hashval)/TIMESIZE)));
+    HashTable(r,hash) = hashval;
+    N = N+1;
+  end
+HashTableCounts(hash) = nentries;
+end
