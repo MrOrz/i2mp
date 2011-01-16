@@ -42,6 +42,10 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   WINDOW_WIDTH = 0;  % unit: time bins
   WINDOW_OFFSET = 1;  % unit: time bins
   
+  % floor masking parameters
+  GAUSSIAN_L = 11; % gaussian window width, should be odd.
+  ALPHA = 0.9;     % floor = ALPHA * new_floor + (1-ALPHA) * floor
+  
   % suppress findpeaks warnings
   warning('off', 'signal:findpeaks:noPeaks');
   
@@ -64,6 +68,9 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
     spectrogram(D, STFT_WINDOW, STFT_OVERLAP, STFT_NSAMPLE, fs, 'yaxis'); 
     hold on;
   end
+  %% setting up mask floor %%
+  mask_floor = mean(P(:,1:min(10,size(P,2))),2); % first 10 time bins
+  MF = P; % records the whole mask floor, debugging purpose
   
   %% find local maxes %%
   
@@ -73,14 +80,15 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   peaks = zeros(length(T), PEAK_NUM);
   peaks(:,:,2) = zeros(length(T), PEAK_NUM);
   fprintf('Processing');
-  for i = 1:length(T) % for each time bin
-    %meanpeak = mean(P(:,i));
-    %find local maximals that is 3dB higher than surroundings.
-    %[pks, loc] = findpeaks(P(:, i),'THRESHOLD' , 3, 'SORTSTR', 'descend');
+  for t = 1:length(T) % for each time bin
+    %meanpeak = mean(P(:,t));
+    
+    % spikes that are higher than the mask floor
+    spikes = max(0, P(:,t) - mask_floor); 
     
     % find local maximals that is MIN_PEAK_DIST away from other smaller
     % peaks.
-    [pks, loc] = findpeaks(P(:, i), 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
+    [pks, loc] = findpeaks(spikes, 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
       
     % only keeps largest PEAK_NUM peaks
     nPeaks = length(pks);
@@ -89,14 +97,23 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
       nPeaks = PEAK_NUM;
     end
     if nPeaks > 0
-      peaks(i,1:nPeaks, 1) = pks;
-      peaks(i,1:nPeaks, 2) = loc;
+      peaks(t,1:nPeaks, 1) = pks;
+      peaks(t,1:nPeaks, 2) = loc;
     end
-    % plot peaks
-    if DRAW;  stem3(ones(1,length(pks)) .* T(i), F(loc), pks); end;
+    
+    % record current mask floor
+    MF(:,t) = mask_floor; 
+    
+    %calculate new mask floor
+    spikes = conv(spikes, gausswin(GAUSSIAN_L), 'same'); % freq masking
+    new_mask_floor = max(P(:,t), mask_floor + spikes);  % freq masked peaks
+    mask_floor = new_mask_floor * ALPHA + mask_floor * (1-ALPHA);
+    
+    % plot peaks and masking flo
+    if DRAW;  stem3(ones(1,length(pks)) .* T(t), F(loc), pks); end;
     
     % progress dots: output a '.' everytime when 100 time bins is processed
-    if mod(i, 100) == 0; fprintf('.'); end;
+    if mod(t, 100) == 0; fprintf('.'); end;
   end
   fprintf('\n');
 
