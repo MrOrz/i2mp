@@ -11,12 +11,17 @@ function main(i)
   % lm[i,:] = ith landmark [f1, f2, dt, t1]. 
   % frequencies and times are in 'bin'.
   [lm1, F1, T1, DT1] = constellations(wav1, TARGET_SAMPLE_RATE, 1);
-  fprintf('# of landmarks = %d\n',size(lm1, 1));  
-  figure; % open up new figure
+  fprintf('# of landmarks = %d\n',size(lm1, 1));
+  print(sprintf('testcases/%d/%d_ref.bmp', i, i), '-dbmp');
+  
+  %figure; 
   [lm2, F2, T2, DT2] = constellations(wav2, TARGET_SAMPLE_RATE, 1);
   fprintf('# of landmarks = %d\n',size(lm2, 1));  
+  print(sprintf('testcases/%d/%d_q.bmp', i, i), '-dbmp');
+  
   % often the case F1 == F2, T1 == T2, DT1 == DT2.
 
+  
   hashInitial;
   T = match(lm1,lm2);      
   fprintf('The time offset is %f secs.\n', T*DT2);
