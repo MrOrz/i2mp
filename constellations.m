@@ -69,13 +69,15 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   fprintf('Frequency resolution = %f Hz\n', F(2)-F(1));
   
   %P = 10*log10(abs(P)); % work in decibels.
-  mean_P = mean(P(:)); P = P - mean_P;
-  P = (filter([1,-1],[1, -HPF_POLE], P') )';
-  P = P + mean_P;
   
   % apply noise floor
   noise_floor = max(abs(P(:))) / 10^(NOISE_FLOOR/10);
   P = abs(max(P, noise_floor));
+  
+  %shift mean so that we can apply HPF to time variations
+  mean_P = mean(P(:)); P = P - mean_P;
+  P = (filter([1,-1],[1, -HPF_POLE], P') )';
+  P = P + mean_P;
   
   if DRAW % draw spectrum. might be slow!
     spectrogram(D, hann(STFT_WINDOW), STFT_OVERLAP, STFT_NSAMPLE, fs, 'yaxis'); 
