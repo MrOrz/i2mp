@@ -1,3 +1,6 @@
+% searchpeak()
+% alternative to the slow matlab findpeaks()
+
 function [pks, loc] = searchpeak(vec, dist)
   v1 = [vec(2:end); vec(end)];
   v2 = [vec(1); vec(1:end-1)];
