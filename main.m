@@ -1,9 +1,9 @@
 function main()
   %% should be calling ffmpeg to downsample here...
-  %wav1 = wavread('testcases/front.wav');
-  %wav2 = wavread('testcases/rear.wav');
-  wav1 = wavread('testcases/MVI_1304.wav');
-  wav2 = wavread('testcases/MVI_1304_ref.wav');
+  wav1 = wavread('testcases/front.wav');
+  wav2 = wavread('testcases/rear.wav');
+  %wav1 = wavread('testcases/MVI_1304.wav');
+  %wav2 = wavread('testcases/MVI_1304.wav');
   TARGET_SAMPLE_RATE = 5000;
   
   wav1 = resample(wav1(1:10*44100, 1), TARGET_SAMPLE_RATE, 44100 );
@@ -20,6 +20,8 @@ function main()
   % often the case F1 == F2, T1 == T2, DT1 == DT2.
 
   hashInitial;
-  match(lm1,lm2);    
+  T = match(lm1,lm2);      
+  fprintf('The time offset is %f secs.\n', T*DT2);
+  
 
 end

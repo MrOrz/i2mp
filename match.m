@@ -1,12 +1,12 @@
-function match(lmRef,lmQ)
+function T = match(lmRef,lmQ)
   % Find the time offset of two landmark;
   
   % Step 1: Construct hash table by the reference audio
-  hashRef = landmark2hash(lmRef);
+  hashRef = unique(landmark2hash(lmRef),'rows');
   recordhash(hashRef);
   
   % Step 2: Find the hash of query audio
-  hashQ = landmark2hash(lmQ);  
+  hashQ = unique(landmark2hash(lmQ),'rows');  
   
   % Step 3: Check in the hash table
   Rt = checkHash(hashQ);  
@@ -21,12 +21,19 @@ function match(lmRef,lmQ)
     % The top 10 
     for i = 1:10
       % R = [Time difference count ,time difference]
-      R = [dt_count(i),dt(dt_count_x(i))];  
+      R = [dt_count(i),dt(dt_count_x(i))];        
       % Sort by descending match count      
       [sort_dt_count,sort_dt_count_x] = sort(R(:,1),'descend');    
-      R = R(sort_dt_count_x,:)
-    end
+      R = R(sort_dt_count_x,:);
+      display(['The rank ',int2str(i),' time offset is ',int2str(R(2)),' .']);
+      display(['Which has ',int2str(R(1)),' matched landmark.']);
+      display(' ')
+      if(i==1)
+          T=R(2);
+      end
+    end    
   else    
+    T=0;
     disp('No Match');
   end
   
