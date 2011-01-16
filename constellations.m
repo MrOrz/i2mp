@@ -21,6 +21,9 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   % -- peak-marking parameters
   % find largest PEAKNUM peaks each time bin.
   PEAK_NUM = 5; 
+  % a "high pass" filter emphasising the variants on time
+  HPF_POLE = 0.8;
+  
   % peaks should be at least MIN_PEAK_DIST
   % frequency bins away from each other
   MIN_PEAK_DIST = 5; 
@@ -44,7 +47,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   WINDOW_WIDTH = 50;  % unit: time bins
   WINDOW_OFFSET = 1;  % unit: time bins
   PAIR_PER_PEAK = 3;
-  
+   
   % floor masking parameters
   GAUSSIAN_L = 21; % gaussian window width, should be odd.
   ALPHA = 0.7;     % floor = ALPHA * new_floor + (1-ALPHA) * floor
@@ -66,6 +69,11 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   fprintf('Frequency resolution = %f Hz\n', F(2)-F(1));
   
   %P = 10*log10(abs(P)); % work in decibels.
+  mean_P = mean(P(:)); P = P - mean_P;
+  P = (filter([1,-1],[1, -HPF_POLE], P') )';
+  P = P + mean_P;
+  
+  % apply noise floor
   noise_floor = max(abs(P(:))) / 10^(NOISE_FLOOR/10);
   P = abs(max(P, noise_floor));
   
