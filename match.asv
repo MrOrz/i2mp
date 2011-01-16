@@ -9,20 +9,19 @@ function match(lmRef,lmQ)
   hashQ = landmark2hash(lmQ);  
   
   % Step 3: Check in the hash table
-  Rt = checkHash(hashQ);
-  
+  Rt = checkHash(hashQ);  
   % Step 4: If something match then print out
   if size(Rt,1) > 0
     R = zeros(2);  
     % Unique the offser value
-    [dt,dt_x] = unique(sort(Rt(:,1)),'first');
-    dtcounts = 1 + diff([dt_x',size(Rt,1)]);
+    [dt,dt_x] = unique(sort(Rt(:,1)),'first');    
+    dtcounts = 1 + diff([dt_x',size(Rt,1)]);    
     % Sort the counts    
     [dt_count,dt_count_x] = sort(dtcounts, 'descend'); 
     % The top 10 
     for i = 1:10
-      % R = [Time difference]
-      R = [sum(abs(Rt(:,1)-dt(dt_count_x(i)))<=1),dt(dt_count_x(i))];  
+      % R = [Time difference count ,time difference]
+      R = [dt_count(i),dt(dt_count_x(i))];  
       % Sort by descending match count      
       [sort_dt_count,sort_dt_count_x] = sort(R(:,1),'descend');    
       R = R(sort_dt_count_x,:)
@@ -30,6 +29,7 @@ function match(lmRef,lmQ)
   else    
     disp('No Match');
   end
+  
 function R = checkHash(hash)
   % Find the set of the offset
   
@@ -47,8 +47,7 @@ function R = checkHash(hash)
     while (Rmax + numberOfEntry > Rsize)
       R = [R;zeros(Rsize,1)];
       Rsize = size(R,1);
-    end
-    diff_t = ;
+    end    
     R(Rmax+[1:numberOfEntry],:) = ref_t - cur_t;
     Rmax = Rmax + numberOfEntry;
   end
