@@ -13,7 +13,6 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   if nargin == 2; DRAW = 0; end;
   
   %% CONFIGURABLE PARAMETERS %%
-  
   % -- configurable short-time Fourier transform parameters 
   STFT_WINDOW  = 256;  % STFT time window. don't know what it is :P
   STFT_OVERLAP = 220;  % # of STFT samples overlapped with last STFT.
@@ -25,7 +24,10 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   % peaks should be at least MIN_PEAK_DIST
   % frequency bins away from each other
   MIN_PEAK_DIST = 5; 
-
+  % noise floor = NOISE_FLOOR dBs below max power
+  % i.e. the "dynamic range"
+  NOISE_FLOOR = 40;
+  
   
   % -- constellation parameters
   %
@@ -63,8 +65,10 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   fprintf('Time resolution = %f sec\n', time_res);
   fprintf('Frequency resolution = %f Hz\n', F(2)-F(1));
   
-  P = 10*log10(abs(P)); % work in decibels.
-
+  %P = 10*log10(abs(P)); % work in decibels.
+  noise_floor = max(abs(P(:))) / 10^(NOISE_FLOOR/10);
+  P = abs(max(P, noise_floor));
+  
   if DRAW % draw spectrum. might be slow!
     spectrogram(D, hann(STFT_WINDOW), STFT_OVERLAP, STFT_NSAMPLE, fs, 'yaxis'); 
     hold on;
@@ -89,7 +93,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
     [pks, loc] = findpeaks(P(:,t), 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
     
     % spikes that are higher than the mask floor for 3 dBs
-    spikes = P(:,t) - mask_floor; spikes(spikes < 1) = 0;
+    spikes = P(:,t) - mask_floor; spikes(spikes < 1e-6) = 0;
     
     % find local maximals that is MIN_PEAK_DIST away from other smaller
     % spikes.
@@ -118,12 +122,13 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
     old_mask_floor = mask_floor + spikes; % freq masked peaks
     %new_mask_floor = max(P(:,t), );  
     new_mask_floor = P(:,t);  
-    %mask_floor = new_mask_floor * ALPHA + (old_mask_floor-.1) * (1-ALPHA);
-    mask_floor = max( new_mask_floor , old_mask_floor - 1);
-    %mask_floor = new_mask_floor;
+    %mask_floor = new_mask_floor * ALPHA + (old_mask_floor) * (1-ALPHA);
+    %mask_floor = max( new_mask_floor , old_mask_floor - 1);
+    mask_floor = new_mask_floor;
     
     % plot peaks
-    if DRAW  stem3(ones(1,length(pks)) .* T(t), F(loc), pks); end;
+    %if DRAW  stem3(ones(1,length(pks)) .* T(t), F(loc), pks); end;
+    if DRAW  stem3(ones(1,length(pks)) .* T(t), F(loc), 10*log10(pks)); end;
     
     % progress dots: output a '.' everytime when 100 time bins is processed
     if mod(t, 100) == 0; fprintf('.'); end;
@@ -132,6 +137,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
 
   % draw mask floor
   %if DRAW; surf(T,F,MF); end;
+  if DRAW; surf(T,F,10*log10(abs(MF))); end;
   
   %% packing local maxes into H %%
   
