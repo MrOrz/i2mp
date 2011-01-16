@@ -22,7 +22,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   % find largest PEAKNUM peaks each time bin.
   PEAK_NUM = 5; 
   % a "high pass" filter emphasising the variants on time
-  HPF_POLE = 0.8;
+  HPF_POLE = 0.5;
   
   % peaks should be at least MIN_PEAK_DIST
   % frequency bins away from each other
@@ -51,6 +51,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   % floor masking parameters
   GAUSSIAN_L = 21; % gaussian window width, should be odd.
   ALPHA = 0.7;     % floor = ALPHA * new_floor + (1-ALPHA) * floor
+  SPIKE_THRESHOLD = 2e-6;
   
   % suppress findpeaks warnings
   warning('off', 'signal:findpeaks:noPeaks');
@@ -102,8 +103,8 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
     % peeks.
     [pks, loc] = findpeaks(P(:,t), 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
     
-    % spikes that are higher than the mask floor for 3 dBs
-    spikes = P(:,t) - mask_floor; spikes(spikes < 1e-6) = 0;
+    % spikes that are SPIKE_THRESHOLD higher than the mask floor.
+    spikes = P(:,t) - mask_floor; spikes(spikes < SPIKE_THRESHOLD) = 0;
     
     % find local maximals that is MIN_PEAK_DIST away from other smaller
     % spikes.
@@ -132,9 +133,9 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
     old_mask_floor = mask_floor + spikes; % freq masked peaks
     %new_mask_floor = max(P(:,t), );  
     new_mask_floor = P(:,t);  
-    %mask_floor = new_mask_floor * ALPHA + (old_mask_floor) * (1-ALPHA);
+    mask_floor = new_mask_floor * ALPHA + (old_mask_floor) * (1-ALPHA);
     %mask_floor = max( new_mask_floor , old_mask_floor - 1);
-    mask_floor = new_mask_floor;
+    %mask_floor = new_mask_floor;
     
     % plot peaks
     %if DRAW  stem3(ones(1,length(pks)) .* T(t), F(loc), pks); end;

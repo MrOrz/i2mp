@@ -22,7 +22,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   % find largest PEAKNUM peaks each time bin.
   PEAK_NUM = 5; 
   % a "high pass" filter emphasising the variants on time
-  HPF_POLE = 0.8;
+  HPF_POLE = 0.5;
   
   % peaks should be at least MIN_PEAK_DIST
   % frequency bins away from each other
@@ -51,6 +51,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   % floor masking parameters
   GAUSSIAN_L = 21; % gaussian window width, should be odd.
   ALPHA = 0.7;     % floor = ALPHA * new_floor + (1-ALPHA) * floor
+  SPIKE_THRESHOLD = 2e-6;
   
   % suppress findpeaks warnings
   warning('off', 'signal:findpeaks:noPeaks');
@@ -69,9 +70,15 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   fprintf('Frequency resolution = %f Hz\n', F(2)-F(1));
   
   %P = 10*log10(abs(P)); % work in decibels.
-  P = (filter([1,-1],[1, -HPF_POLE], P') )';
+  
+  % apply noise floor
   noise_floor = max(abs(P(:))) / 10^(NOISE_FLOOR/10);
   P = abs(max(P, noise_floor));
+  
+  %shift mean so that we can apply HPF to time variations
+  mean_P = mean(P(:)); P = P - mean_P;
+  P = (filter([1,-1],[1, -HPF_POLE], P') )';
+  P = P + mean_P;
   
   if DRAW % draw spectrum. might be slow!
     spectrogram(D, hann(STFT_WINDOW), STFT_OVERLAP, STFT_NSAMPLE, fs, 'yaxis'); 
@@ -96,8 +103,8 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
     % peeks.
     [pks, loc] = findpeaks(P(:,t), 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
     
-    % spikes that are higher than the mask floor for 3 dBs
-    spikes = P(:,t) - mask_floor; spikes(spikes < 1e-6) = 0;
+    % spikes that are SPIKE_THRESHOLD higher than the mask floor.
+    spikes = P(:,t) - mask_floor; spikes(spikes < SPIKE_THRESHOLD) = 0;
     
     % find local maximals that is MIN_PEAK_DIST away from other smaller
     % spikes.
@@ -126,9 +133,9 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
     old_mask_floor = mask_floor + spikes; % freq masked peaks
     %new_mask_floor = max(P(:,t), );  
     new_mask_floor = P(:,t);  
-    %mask_floor = new_mask_floor * ALPHA + (old_mask_floor) * (1-ALPHA);
+    mask_floor = new_mask_floor * ALPHA + (old_mask_floor) * (1-ALPHA);
     %mask_floor = max( new_mask_floor , old_mask_floor - 1);
-    mask_floor = new_mask_floor;
+    %mask_floor = new_mask_floor;
     
     % plot peaks
     %if DRAW  stem3(ones(1,length(pks)) .* T(t), F(loc), pks); end;
