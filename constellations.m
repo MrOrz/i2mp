@@ -38,20 +38,21 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   %         window width (time bins)
   %
 
-  WINDOW_HEIGHT = 6; % unit: frequency bins
-  WINDOW_WIDTH = 0;  % unit: time bins
+  WINDOW_HEIGHT = 50; % unit: frequency bins
+  WINDOW_WIDTH = 50;  % unit: time bins
   WINDOW_OFFSET = 1;  % unit: time bins
+  PAIR_PER_PEAK = 3;
   
   % floor masking parameters
   GAUSSIAN_L = 21; % gaussian window width, should be odd.
-  ALPHA = 0.9;     % floor = ALPHA * new_floor + (1-ALPHA) * floor
+  ALPHA = 0.7;     % floor = ALPHA * new_floor + (1-ALPHA) * floor
   
   % suppress findpeaks warnings
   warning('off', 'signal:findpeaks:noPeaks');
   
   %% spectrum analysis %%
   
-  [S,F,T,P] = spectrogram(D, STFT_WINDOW, STFT_OVERLAP, STFT_NSAMPLE, fs); 
+  [S,F,T,P] = spectrogram(D, hann(STFT_WINDOW), STFT_OVERLAP, STFT_NSAMPLE, fs); 
   % S: ignored. 
   % F: freq bin -> real frequency in Hz. Can be used as frequency axis
   % T: time bin -> real time in seconds. Can be used as time axis.
@@ -65,7 +66,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   P = 10*log10(abs(P)); % work in decibels.
 
   if DRAW % draw spectrum. might be slow!
-    spectrogram(D, STFT_WINDOW, STFT_OVERLAP, STFT_NSAMPLE, fs, 'yaxis'); 
+    spectrogram(D, hann(STFT_WINDOW), STFT_OVERLAP, STFT_NSAMPLE, fs, 'yaxis'); 
     hold on;
   end
   %% setting up mask floor %%
@@ -83,13 +84,21 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   for t = 1:length(T) % for each time bin
     %meanpeak = mean(P(:,t));
     
-    % spikes that are higher than the mask floor
-    spikes = max(0, P(:,t) - mask_floor); 
+    % find local maximals that is MIN_PEAK_DIST away from other smaller
+    % peeks.
+    [pks, loc] = findpeaks(P(:,t), 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
+    
+    % spikes that are higher than the mask floor for 3 dBs
+    spikes = P(:,t) - mask_floor; spikes(spikes < 1) = 0;
     
     % find local maximals that is MIN_PEAK_DIST away from other smaller
-    % peaks.
-    [pks, loc] = findpeaks(spikes, 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
-      
+    % spikes.
+    [~, locspike] = findpeaks(spikes);
+    
+    % only find the peaks that are also spikes
+    [loc,pks_index,~] = intersect(loc, locspike);
+    pks = pks(pks_index);
+    
     % only keeps largest PEAK_NUM peaks
     nPeaks = length(pks);
     if nPeaks > PEAK_NUM
@@ -106,8 +115,12 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
     
     %calculate new mask floor
     spikes = conv(spikes, gausswin(GAUSSIAN_L), 'same'); % freq masking
-    new_mask_floor = max(P(:,t), mask_floor + spikes);  % freq masked peaks
-    mask_floor = new_mask_floor * ALPHA + mask_floor * (1-ALPHA);
+    old_mask_floor = mask_floor + spikes; % freq masked peaks
+    %new_mask_floor = max(P(:,t), );  
+    new_mask_floor = P(:,t);  
+    %mask_floor = new_mask_floor * ALPHA + (old_mask_floor-.1) * (1-ALPHA);
+    mask_floor = max( new_mask_floor , old_mask_floor - 1);
+    %mask_floor = new_mask_floor;
     
     % plot peaks
     if DRAW  stem3(ones(1,length(pks)) .* T(t), F(loc), pks); end;
