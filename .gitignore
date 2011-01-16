@@ -1,3 +1,5 @@
 testcases/*
 fingerprint/mp3/*
-
+fingerprint/*.mp3
+fingerprint/*.wav
+fingerprint/*.pk
