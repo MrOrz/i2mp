@@ -1,7 +1,7 @@
-function main()
+function main(i)
   %% should be calling ffmpeg to downsample here...
-  wav1 = wavread('testcases/front.wav');
-  wav2 = wavread('testcases/rear.wav');
+  wav1 = wavread(['testcases/',/front.wav']);
+  wav2 = wavread(['testcases/',rear.wav']);
   %wav1 = wavread('testcases/MVI_1304.wav');
   %wav2 = wavread('testcases/MVI_1304.wav');
   TARGET_SAMPLE_RATE = 5000;
@@ -20,8 +20,8 @@ function main()
   % often the case F1 == F2, T1 == T2, DT1 == DT2.
 
   hashInitial;
-  T = match(lm1,lm2);    
-  sprintf('The time offset is')
-  display(['The time offset is ', float2str() ,' .'])
+  T = match(lm1,lm2);      
+  fprintf('The time offset is %f secs.\n', T*DT2);
+  
 
 end
