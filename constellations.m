@@ -55,7 +55,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   
   %% spectrum analysis %%
   
-  [S,F,T,P] = spectrogram(D, hann(STFT_WINDOW), STFT_OVERLAP, STFT_NSAMPLE, fs); 
+  [ S,F,T,P] = spectrogram(D, hann(STFT_WINDOW), STFT_OVERLAP, STFT_NSAMPLE, fs); 
   % S: ignored. 
   % F: freq bin -> real frequency in Hz. Can be used as frequency axis
   % T: time bin -> real time in seconds. Can be used as time axis.
@@ -91,21 +91,22 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   % peaks(i, j, 1) = jth peak value of time bin i
   % peaks(i, j, 2) = location (freq bin) of jth peak of time bin i
   peaks = zeros(length(T), PEAK_NUM);
-  peaks(:,:,2) = zeros(length(T), PEAK_NUM);
+  %peaks(:,:,2) = zeros(length(T), PEAK_NUM);
   fprintf('Processing');
   for t = 1:length(T) % for each time bin
     %meanpeak = mean(P(:,t));
     
     % find local maximals that is MIN_PEAK_DIST away from other smaller
     % peeks.
-    [pks, loc] = findpeaks(P(:,t), 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
+    %[pks, loc] = findpeaks(P(:,t), 'SORTSTR', 'descend','MINPEAKDISTANCE' , MIN_PEAK_DIST);
+    [pks, loc] = searchpeak(P(:,t), MIN_PEAK_DIST);
     
     % spikes that are SPIKE_THRESHOLD higher than the mask floor.
     spikes = P(:,t) - mask_floor; spikes(spikes < SPIKE_THRESHOLD) = 0;
     
-    % find local maximals that is MIN_PEAK_DIST away from other smaller
-    % spikes.
-    [~, locspike] = findpeaks(spikes);
+    % find local maximals of spikes.
+    %[~, locspike] = findpeaks(spikes);
+    [~, locspike] = searchpeak(spikes);
     
     % only find the peaks that are also spikes
     [loc,pks_index,~] = intersect(loc, locspike);
@@ -118,8 +119,9 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
       nPeaks = PEAK_NUM;
     end
     if nPeaks > 0
-      peaks(t,1:nPeaks, 1) = pks;
-      peaks(t,1:nPeaks, 2) = loc;
+      %peaks(t,1:nPeaks, 1) = pks;
+      %peaks(t,1:nPeaks, 2) = loc;
+      peaks(t,1:nPeaks) = loc;
     end
     
     % record current mask floor
@@ -145,7 +147,7 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   %% packing local maxes into H %%
   
   fprintf('Generating Pairs');
-  peaks = peaks(:,:,2); % discard peak value, only loc remains
+  %peaks = peaks(:,:,2); % discard peak value, only loc remains
   
   prealloc_size = PEAK_NUM * length(T);
   H = zeros(prealloc_size , 4);
@@ -198,4 +200,3 @@ function [H, F, T, DT] = constellations( D, fs , DRAW)
   end
   
 end
-

@@ -2,7 +2,7 @@ function main()
   %% should be calling ffmpeg to downsample here...
   wav1 = wavread('testcases/front.wav');
   wav2 = wavread('testcases/rear.wav');
-  %wav1 = wavread('testcases/MVI_1304.wav');
+  %wav1 = wavread('testcases/MVI_13042.wav');
   %wav2 = wavread('testcases/MVI_1304.wav');
   TARGET_SAMPLE_RATE = 5000;
   
